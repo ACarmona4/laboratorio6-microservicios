@@ -1,6 +1,6 @@
 import { findBookById } from "../../models/bookModel.js";
 
-export const checkBookExists = async (call, callback) => {
+export const getBookById = async (call, callback) => {
   try {
     const { bookId } = call.request;
 
@@ -10,18 +10,21 @@ export const checkBookExists = async (call, callback) => {
       return callback(null, {
         exists: false,
         id: "",
-        title: "",
+        name: "",
+        price: 0,
+        countInStock: 0,
       });
     }
 
     callback(null, {
       exists: true,
-      id: book.id || "",
-      title: book.title || "",
+      id: String(book.id || ""),
+      name: String(book.name || ""),
+      price: Number(book.price || 0),
+      countInStock: Number(book.countInStock || 0),
     });
   } catch (error) {
-    console.error("gRPC error in CheckBookExists:", error);
-
+    console.error("gRPC error in GetBookById:", error);
     callback(error);
   }
 };

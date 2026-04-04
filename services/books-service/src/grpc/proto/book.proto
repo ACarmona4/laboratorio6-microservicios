@@ -3,15 +3,17 @@ syntax = "proto3";
 package books;
 
 service BookService {
-  rpc CheckBookExists (BookRequest) returns (BookExistsResponse);
+  rpc GetBookById (BookRequest) returns (BookResponse);
 }
 
 message BookRequest {
   string bookId = 1;
 }
 
-message BookExistsResponse {
+message BookResponse {
   bool exists = 1;
   string id = 2;
-  string title = 3;
+  string name = 3;
+  int32 price = 4;
+  int32 countInStock = 5;
 }

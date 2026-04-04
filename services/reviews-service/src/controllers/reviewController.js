@@ -1,5 +1,5 @@
 import { findReviewsByBookId, saveReview } from '../models/reviewModel.js';
-import { checkBookExists } from '../grpc/clients/bookGrpcClient.js';
+import { getBookById } from '../grpc/clients/bookGrpcClient.js';
 
 export const getReviewsByBookId = async (req, res) => {
   try {
@@ -33,9 +33,9 @@ export const createReview = async (req, res) => {
       });
     }
 
-    const bookValidation = await checkBookExists(bookId);
+    const book = await getBookById(bookId);
 
-    if (!bookValidation.exists) {
+    if (!book.exists) {
       return res.status(404).json({
         message: 'Book not found',
       });

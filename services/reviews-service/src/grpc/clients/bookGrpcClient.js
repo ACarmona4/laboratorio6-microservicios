@@ -25,9 +25,9 @@ const client = new bookProto.BookService(
   grpc.credentials.createInsecure()
 );
 
-export const checkBookExists = (bookId) => {
+export const getBookById = (bookId) => {
   return new Promise((resolve, reject) => {
-    client.CheckBookExists({ bookId }, (error, response) => {
+    client.GetBookById({ bookId }, (error, response) => {
       if (error) {
         return reject(error);
       }
