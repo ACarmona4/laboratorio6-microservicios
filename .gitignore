@@ -1,7 +1,19 @@
-*.env
 .DS_Store
-node_modules/
-dist/
-logs/
 *.log
+logs/
+
+# env files
+.env
+.env.*
+
+# dependencies
+node_modules/
+
+# build artifacts
+dist/
+build/
+coverage/
+.next/
+.turbo/
+.cache/
 
