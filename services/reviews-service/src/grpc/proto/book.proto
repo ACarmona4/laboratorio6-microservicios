@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+package books;
+
+service BookService {
+  rpc CheckBookExists (BookRequest) returns (BookExistsResponse);
+}
+
+message BookRequest {
+  string bookId = 1;
+}
+
+message BookExistsResponse {
+  bool exists = 1;
+  string id = 2;
+  string title = 3;
+}
