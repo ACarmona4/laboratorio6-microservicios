@@ -1,0 +1,139 @@
+services:
+  books-service:
+    build:
+      context: ./services/books-service
+    container_name: books-service
+    environment:
+      PORT: 5001
+      GRPC_PORT: 50051
+      NODE_ENV: production
+      AWS_REGION: us-east-1
+      BOOKS_TABLE: tb_books
+    ports:
+      - "5001:5001"
+      - "50051:50051"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O - http://localhost:5001/health >/dev/null 2>&1 || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+
+  reviews-service:
+    build:
+      context: ./services/reviews-service
+    container_name: reviews-service
+    depends_on:
+      books-service:
+        condition: service_healthy
+    environment:
+      PORT: 5002
+      NODE_ENV: production
+      AWS_REGION: us-east-1
+      REVIEWS_TABLE: tb_reviews
+      BOOKS_GRPC_HOST: books-service:50051
+    ports:
+      - "5002:5002"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O - http://localhost:5002/health >/dev/null 2>&1 || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+
+  orders-service:
+    build:
+      context: ./services/orders-service
+    container_name: orders-service
+    depends_on:
+      books-service:
+        condition: service_healthy
+    environment:
+      PORT: 5003
+      NODE_ENV: production
+      AWS_REGION: us-east-1
+      ORDERS_TABLE: tb_orders
+      BOOKS_GRPC_HOST: books-service:50051
+    ports:
+      - "5003:5003"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O - http://localhost:5003/health >/dev/null 2>&1 || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+
+  users-service:
+    build:
+      context: ./services/users-service
+    container_name: users-service
+    environment:
+      PORT: 5004
+      NODE_ENV: production
+      AWS_REGION: us-east-1
+      USERS_TABLE: tb_users
+    ports:
+      - "5004:5004"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O - http://localhost:5004/health >/dev/null 2>&1 || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+
+  api-gateway:
+    build:
+      context: ./services/api-gateway
+    container_name: api-gateway
+    depends_on:
+      books-service:
+        condition: service_healthy
+      reviews-service:
+        condition: service_healthy
+      orders-service:
+        condition: service_healthy
+      users-service:
+        condition: service_healthy
+    environment:
+      PORT: 8080
+      BOOKS_SERVICE_URL: http://books-service:5001
+      REVIEWS_SERVICE_URL: http://reviews-service:5002
+      ORDERS_SERVICE_URL: http://orders-service:5003
+      USERS_SERVICE_URL: http://users-service:5004
+      USERS_SERVICE_ENABLED: "true"
+      SERVICE_TIMEOUT_MS: 7000
+    ports:
+      - "8080:8080"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O - http://localhost:8080/health >/dev/null 2>&1 || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./services/frontend
+      args:
+        VITE_API_GATEWAY_URL: http://localhost:8080/api
+        VITE_USE_MOCKS: "false"
+        VITE_USERS_MODE: api
+        VITE_APP_NAME: Bookstore Frontend
+    container_name: frontend
+    depends_on:
+      api-gateway:
+        condition: service_healthy
+    ports:
+      - "3000:80"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O - http://localhost/health >/dev/null 2>&1 || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
