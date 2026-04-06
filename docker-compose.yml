@@ -3,12 +3,14 @@ services:
     build:
       context: ./services/books-service
     container_name: books-service
+    env_file:
+      - ./services/books-service/.env
     environment:
-      PORT: 5001
-      GRPC_PORT: 50051
-      NODE_ENV: production
-      AWS_REGION: us-east-1
-      BOOKS_TABLE: tb_books
+      AWS_REGION: ${AWS_REGION:-us-east-1}
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
+      AWS_SESSION_TOKEN: ${AWS_SESSION_TOKEN:-}
+      BOOKS_PUBLIC_BASE_URL: ${BOOKS_PUBLIC_BASE_URL:-http://localhost:5001}
     ports:
       - "5001:5001"
       - "50051:50051"
@@ -24,14 +26,16 @@ services:
     build:
       context: ./services/reviews-service
     container_name: reviews-service
+    env_file:
+      - ./services/reviews-service/.env
     depends_on:
       books-service:
         condition: service_healthy
     environment:
-      PORT: 5002
-      NODE_ENV: production
-      AWS_REGION: us-east-1
-      REVIEWS_TABLE: tb_reviews
+      AWS_REGION: ${AWS_REGION:-us-east-1}
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
+      AWS_SESSION_TOKEN: ${AWS_SESSION_TOKEN:-}
       BOOKS_GRPC_HOST: books-service:50051
     ports:
       - "5002:5002"
@@ -47,14 +51,16 @@ services:
     build:
       context: ./services/orders-service
     container_name: orders-service
+    env_file:
+      - ./services/orders-service/.env
     depends_on:
       books-service:
         condition: service_healthy
     environment:
-      PORT: 5003
-      NODE_ENV: production
-      AWS_REGION: us-east-1
-      ORDERS_TABLE: tb_orders
+      AWS_REGION: ${AWS_REGION:-us-east-1}
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
+      AWS_SESSION_TOKEN: ${AWS_SESSION_TOKEN:-}
       BOOKS_GRPC_HOST: books-service:50051
     ports:
       - "5003:5003"
@@ -70,11 +76,13 @@ services:
     build:
       context: ./services/users-service
     container_name: users-service
+    env_file:
+      - ./services/users-service/.env
     environment:
-      PORT: 5004
-      NODE_ENV: production
-      AWS_REGION: us-east-1
-      USERS_TABLE: tb_users
+      AWS_REGION: ${AWS_REGION:-us-east-1}
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
+      AWS_SESSION_TOKEN: ${AWS_SESSION_TOKEN:-}
     ports:
       - "5004:5004"
     healthcheck:
@@ -89,6 +97,8 @@ services:
     build:
       context: ./services/api-gateway
     container_name: api-gateway
+    env_file:
+      - ./services/api-gateway/.env
     depends_on:
       books-service:
         condition: service_healthy
@@ -99,13 +109,10 @@ services:
       users-service:
         condition: service_healthy
     environment:
-      PORT: 8080
       BOOKS_SERVICE_URL: http://books-service:5001
       REVIEWS_SERVICE_URL: http://reviews-service:5002
       ORDERS_SERVICE_URL: http://orders-service:5003
       USERS_SERVICE_URL: http://users-service:5004
-      USERS_SERVICE_ENABLED: "true"
-      SERVICE_TIMEOUT_MS: 7000
     ports:
       - "8080:8080"
     healthcheck:
@@ -120,10 +127,10 @@ services:
     build:
       context: ./services/frontend
       args:
-        VITE_API_GATEWAY_URL: http://localhost:8080/api
-        VITE_USE_MOCKS: "false"
-        VITE_USERS_MODE: api
-        VITE_APP_NAME: Bookstore Frontend
+        VITE_API_GATEWAY_URL: ${FRONTEND_API_GATEWAY_URL:-http://localhost:8080/api}
+        VITE_USE_MOCKS: ${FRONTEND_USE_MOCKS:-false}
+        VITE_USERS_MODE: ${FRONTEND_USERS_MODE:-api}
+        VITE_APP_NAME: ${FRONTEND_APP_NAME:-Bookstore Frontend}
     container_name: frontend
     depends_on:
       api-gateway:
