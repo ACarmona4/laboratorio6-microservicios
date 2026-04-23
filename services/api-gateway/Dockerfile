@@ -1,12 +1,9 @@
-FROM node:20-alpine AS base
+FROM nginx:alpine
 
-WORKDIR /usr/src/app
+# Copiar la configuracion de NGINX
+COPY nginx.conf /etc/nginx/nginx.conf
 
-COPY package*.json ./
-RUN npm ci --omit=dev
-
-COPY . .
-
+# Exponer el puerto
 EXPOSE 8080
 
-CMD ["npm", "start"]
+CMD ["nginx", "-g", "daemon off;"]
