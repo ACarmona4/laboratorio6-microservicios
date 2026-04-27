@@ -16,8 +16,7 @@ spec:
     spec:
       containers:
         - name: api-gateway
-          # Remplazar con la URI real de ECR, ej: 123456789.dkr.ecr.us-east-1.amazonaws.com/api-gateway:latest
-          image: api-gateway:latest 
+          image: 730335426966.dkr.ecr.us-east-1.amazonaws.com/bookstore/api-gateway:latest
           imagePullPolicy: Always
           ports:
             - containerPort: 8080
@@ -34,7 +33,7 @@ kind: Service
 metadata:
   name: api-gateway
 spec:
-  type: ClusterIP
+  type: NodePort
   selector:
     app: api-gateway
   ports:

@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
         - name: reviews-service
-          image: reviews-service:latest
+          image: 730335426966.dkr.ecr.us-east-1.amazonaws.com/bookstore/reviews-service:latest
           imagePullPolicy: Always
           ports:
             - containerPort: 5002
