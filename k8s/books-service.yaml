@@ -1,0 +1,53 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: books-service
+  labels:
+    app: books-service
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: books-service
+  template:
+    metadata:
+      labels:
+        app: books-service
+    spec:
+      containers:
+        - name: books-service
+          image: books-service:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 5001
+            - containerPort: 50051
+          envFrom:
+            - configMapRef:
+                name: bookstore-config
+            - secretRef:
+                name: bookstore-secrets
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 5001
+            initialDelaySeconds: 10
+            periodSeconds: 15
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: books-service
+spec:
+  type: ClusterIP
+  selector:
+    app: books-service
+  ports:
+    - name: http
+      protocol: TCP
+      port: 5001
+      targetPort: 5001
+    - name: grpc
+      protocol: TCP
+      port: 50051
+      targetPort: 50051

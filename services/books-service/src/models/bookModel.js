@@ -1,25 +1,22 @@
-import docClient from "../config/dynamo.js";
-import { GetCommand, ScanCommand } from "@aws-sdk/lib-dynamodb";
-
-const TABLE = process.env.BOOKS_TABLE || "tb_books";
+import pool from "../config/db.js";
 
 export const findAllBooks = async () => {
-  const command = new ScanCommand({
-    TableName: TABLE,
-  });
-
-  const result = await docClient.send(command);
-  return result.Items || [];
+  const result = await pool.query('SELECT * FROM books');
+  
+  // Convert underscore names to camelCase for backwards compatibility
+  return result.rows.map(row => ({
+    ...row,
+    countInStock: row.count_in_stock
+  }));
 };
 
 export const findBookById = async (id) => {
-  const command = new GetCommand({
-    TableName: TABLE,
-    Key: {
-      id,
-    },
-  });
-
-  const result = await docClient.send(command);
-  return result.Item || null;
+  const result = await pool.query('SELECT * FROM books WHERE id = $1', [id]);
+  if (result.rows.length === 0) return null;
+  
+  const row = result.rows[0];
+  return {
+    ...row,
+    countInStock: row.count_in_stock
+  };
 };

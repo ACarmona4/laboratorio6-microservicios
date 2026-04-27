@@ -1,8 +1,18 @@
 import crypto from "crypto";
-import docClient from "../config/dynamo.js";
-import { PutCommand, GetCommand, ScanCommand } from "@aws-sdk/lib-dynamodb";
+import pool from "../config/db.js";
 
-const TABLE = process.env.ORDERS_TABLE || "tb_orders";
+const mapRowToOrder = (row) => ({
+  id: row.id,
+  userId: row.user_id,
+  bookId: row.book_id,
+  bookName: row.book_name,
+  quantity: row.quantity,
+  unitPrice: parseFloat(row.unit_price),
+  total: parseFloat(row.total),
+  status: row.status,
+  paymentMethod: row.payment_method,
+  createdAt: row.created_at,
+});
 
 export const saveOrder = async ({
   userId,
@@ -12,50 +22,28 @@ export const saveOrder = async ({
   unitPrice,
   total,
 }) => {
-  const newOrder = {
-    id: crypto.randomUUID(),
-    userId,
-    bookId,
-    bookName,
-    quantity,
-    unitPrice,
-    total,
-    status: "CONFIRMED",
-    paymentMethod: "CASH",
-    createdAt: new Date().toISOString(),
-  };
+  const id = crypto.randomUUID();
+  const status = "CONFIRMED";
+  const paymentMethod = "CASH";
 
-  const command = new PutCommand({
-    TableName: TABLE,
-    Item: newOrder,
-  });
+  const result = await pool.query(
+    `INSERT INTO orders 
+      (id, user_id, book_id, book_name, quantity, unit_price, total, status, payment_method) 
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) 
+     RETURNING *`,
+    [id, userId, bookId, bookName, quantity, unitPrice, total, status, paymentMethod]
+  );
 
-  await docClient.send(command);
-
-  return newOrder;
+  return mapRowToOrder(result.rows[0]);
 };
 
 export const findOrderById = async (id) => {
-  const command = new GetCommand({
-    TableName: TABLE,
-    Key: {
-      id,
-    },
-  });
-
-  const result = await docClient.send(command);
-  return result.Item || null;
+  const result = await pool.query('SELECT * FROM orders WHERE id = $1', [id]);
+  if (result.rows.length === 0) return null;
+  return mapRowToOrder(result.rows[0]);
 };
 
 export const findOrdersByUserId = async (userId) => {
-  const command = new ScanCommand({
-    TableName: TABLE,
-    FilterExpression: "userId = :userId",
-    ExpressionAttributeValues: {
-      ":userId": userId,
-    },
-  });
-
-  const result = await docClient.send(command);
-  return result.Items || [];
+  const result = await pool.query('SELECT * FROM orders WHERE user_id = $1', [userId]);
+  return result.rows.map(mapRowToOrder);
 };

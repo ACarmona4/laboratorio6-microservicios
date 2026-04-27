@@ -1,0 +1,26 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: bookstore-config
+data:
+  AWS_REGION: "us-east-1"
+  BOOKS_GRPC_HOST: "books-service:50051"
+  BOOKS_SERVICE_URL: "http://books-service:5001"
+  REVIEWS_SERVICE_URL: "http://reviews-service:5002"
+  ORDERS_SERVICE_URL: "http://orders-service:5003"
+  USERS_SERVICE_URL: "http://users-service:5004"
+  FRONTEND_API_GATEWAY_URL: "/api"
+  FRONTEND_USE_MOCKS: "false"
+
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: bookstore-secrets
+type: Opaque
+stringData:
+  # Remplazar con las credenciales reales de RDS y AWS antes de aplicar en producción
+  DATABASE_URL: "postgres://user:password@rds-endpoint.amazonaws.com:5432/bookstore"
+  AWS_ACCESS_KEY_ID: "YOUR_ACCESS_KEY"
+  AWS_SECRET_ACCESS_KEY: "YOUR_SECRET_KEY"
+  AWS_SESSION_TOKEN: ""

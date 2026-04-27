@@ -1,4 +1,22 @@
 services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: postgres-db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: bookstore
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./db-init:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d bookstore"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
   books-service:
     build:
       context: ./services/books-service
@@ -11,6 +29,10 @@ services:
       AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
       AWS_SESSION_TOKEN: ${AWS_SESSION_TOKEN:-}
       BOOKS_PUBLIC_BASE_URL: ${BOOKS_PUBLIC_BASE_URL:-http://localhost:5001}
+      DATABASE_URL: postgres://postgres:postgres@postgres:5432/bookstore
+    depends_on:
+      postgres:
+        condition: service_healthy
     ports:
       - "5001:5001"
       - "50051:50051"
@@ -56,12 +78,15 @@ services:
     depends_on:
       books-service:
         condition: service_healthy
+      postgres:
+        condition: service_healthy
     environment:
       AWS_REGION: ${AWS_REGION:-us-east-1}
       AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
       AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
       AWS_SESSION_TOKEN: ${AWS_SESSION_TOKEN:-}
       BOOKS_GRPC_HOST: books-service:50051
+      DATABASE_URL: postgres://postgres:postgres@postgres:5432/bookstore
     ports:
       - "5003:5003"
     healthcheck:
